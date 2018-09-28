@@ -110,3 +110,5 @@ rmuse/__pycache__/
 rmuse/data_prep/__pycache__/
 webapp/__pycache__/
 webapp/rmuse_app/__pycache__/
+
+*.wav
