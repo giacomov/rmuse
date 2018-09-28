@@ -66,7 +66,15 @@ class ChordSequencePlayer(object):
         """
 
         # Get notes making up the chord
-        components = self._components[chord]
+        try:
+
+            components = self._components[chord]
+
+        except KeyError:
+
+            chord = chord.replace("A#", "Bb")
+
+            components = self._components[chord]
 
         # Get the equivalent MIDI integer number
         midi_notes = map(lambda x: lazy_midi.str2midi("%s5" % x), components)

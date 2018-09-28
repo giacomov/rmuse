@@ -77,14 +77,8 @@ def _get_prediction(input_sequence, ai_, seed_):
             gen_seq = " ".join(gen_seq)
 
         # Generate audio for this sequence
-        try:
-
-            pl = ChordSequencePlayer()
-            pl.to_wav(input_sequence, 'static/test.wav')
-
-        except:
-
-            pass
+        pl = ChordSequencePlayer()
+        pl.to_wav(input_sequence, 'static/test.wav')
 
         with graph.as_default():
 
@@ -125,9 +119,9 @@ def _get_prediction(input_sequence, ai_, seed_):
     return input_sequence, choices, probabilities
 
 
-@app.route('/webgl/')
-@app.route('/webgl/<input_sequence>')
-def webgl(input_sequence=None):
+@app.route('/hitmaker/')
+@app.route('/hitmaker/<input_sequence>')
+def hitmaker(input_sequence=None):
 
     import tensorflow as tf
 
@@ -135,14 +129,24 @@ def webgl(input_sequence=None):
 
     input_sequence, choices, probabilities = _get_prediction(input_sequence, ai, seed_sequences)
 
+    if len(input_sequence.split(" ")) <= 3:
+
+        # Not enough chords for score
+        score = '(need at least 3 chords)'
+
+    else:
+
+        os = OriginalityScore(configuration['connoisseur_binomials'])
+        score = os.originality_ranking(input_sequence.strip())
+
     return render_template("view.html", input_sequence=input_sequence,
                            choices=choices,
                            probabilities=probabilities,
-                           score="10")
+                           score=score)
 
 
-@app.route('/rock/')
-@app.route('/rock/<input_sequence>')
+@app.route('/connoisseur/')
+@app.route('/connoisseur/<input_sequence>')
 def rock(input_sequence=None):
 
     import tensorflow as tf
@@ -164,7 +168,8 @@ def rock(input_sequence=None):
     return render_template("view.html", input_sequence=input_sequence,
                            choices=choices,
                            probabilities=probabilities,
-                           score=score)
+                           score=score,
+                           icon_file=url_for('static', filename='connoisseur.png'))
 
 @app.route('/')
 def main():
