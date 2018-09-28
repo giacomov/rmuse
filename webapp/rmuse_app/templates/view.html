@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html>
+<link href="https://fonts.googleapis.com/css?family=Karla" rel="stylesheet">
+<head>
+    <title>rMuse: find your inspiration</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        html, body {
+            height: 100%;
+        }
+
+        /*#f7fcf0*/
+        /*#e0f3db*/
+        /*#ccebc5*/
+        /*#a8ddb5*/
+        /*#7bccc4*/
+
+        :root {
+
+            --global-background: #ffffff;
+            --text: #252525;
+            --past_chords_color: #efe2ba;
+            --choices_color: #d79922;
+            --bar-color: #4056a1;
+            --prob-bar-color: #f13c20;
+            --font: 'Karla';
+        }
+
+        /*:root {*/
+
+        /*--global-background: #fff7ec;*/
+        /*--text: #252525;*/
+        /*--past_chords_color: #fdbb84;*/
+        /*--choices_color: #e34a33;*/
+        /*--bar-color: #fdbb84;*/
+        /*--prob-bar-color: #fdbb84;*/
+        /*--font: 'Karla';*/
+        /*}*/
+
+        /*#fee8c8*/
+        /*#fdbb84*/
+        /*#e34a33*/
+
+        body {
+            background-color: var(--global-background);
+            margin: 0;
+            font-family: var(--font), sans-serif;
+            overflow: hidden;
+        }
+
+        a {
+            color: var(--text);
+        }
+
+        #info {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            color: var(--text);
+            padding: 5px;
+            font-family: var(--font), sans-serif;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            z-index: 1;
+        }
+
+        .score {
+            position: absolute;
+            top: 41%;
+            left: 85%;
+            width: 10%;
+            padding: 5px;
+            z-index: 1;
+
+        }
+
+        .score .heading {
+
+            text-align: left;
+            font-family: var(--font), sans-serif;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            color: var(--text);
+
+        }
+
+        .score .bar {
+
+            top: 20px;
+            background-color: var(--bar-color);
+            top: 20px;
+            left: 85%;
+            width: 10%;
+            height: 20px;
+            padding: 5px;
+            font-family: var(--font), sans-serif;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            z-index: 1;
+        }
+
+        #menu {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .element {
+            width: 120px;
+            height: 160px;
+            text-align: center;
+            cursor: default;
+            word-wrap: break-word; /* All browsers since IE 5.5+ */
+            overflow-wrap: break-word; /* Renamed property in CSS3 draft spec */
+        }
+
+        .element:hover {
+            box-shadow: 0px 0px 12px rgba(0, 255, 255, 0.75);
+            border: 5px solid rgba(127, 255, 255, 0.75);
+        }
+
+        .element .number {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 12px;
+            color: var(--text);
+        }
+
+        .element .symbol {
+            position: absolute;
+            top: 40px;
+            left: 0px;
+            right: 0px;
+            font-size: 45px;
+            font-weight: bold;
+            color: #252525;
+            /* text-shadow: 0 0 10px rgba(0, 255, 255, 0.95); */
+        }
+
+        button {
+            color: rgba(127, 255, 255, 0.75);
+            background: transparent;
+            outline: 1px solid rgba(127, 255, 255, 0.75);
+            border: 0px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: rgba(0, 255, 255, 0.5);
+        }
+
+        button:active {
+            color: #000000;
+            background-color: rgba(0, 255, 255, 0.75);
+        }
+
+        .probbar {
+            width: 100px;
+            height: 40px;
+            text-align: center;
+            cursor: default;
+            background-color: var(--prob-bar-color);
+        }
+
+    </style>
+</head>
+<body>
+<script src="{{ url_for('static', filename='js/three.js') }}">></script>
+<script src="{{ url_for('static', filename='js/libs/tween.min.js') }}">></script>
+<script src="{{ url_for('static', filename='js/controls/TrackballControls.js') }}">></script>
+<script src="{{ url_for('static', filename='js/renderers/CSS3DRenderer.js') }}">></script>
+<script async type="text/javascript" src="https://www.scales-chords.com/api/scales-chords-api.js"></script>
+
+<div id="info">rMuse v 0.2 @ Insight Data</div>
+<div id="container"></div>
+
+
+<script>
+
+    var input_sequence = "{{ input_sequence }}".split(" ");
+    var probabilities = "{{ probabilities }}".split(" ");
+    var choices = "{{ choices }}".split(" ");
+    var score = "{{ score }}";
+
+    draw_score_bar(score);
+
+    // console.log(input_sequence);
+    // console.log(choices);
+    // console.log(probabilities);
+
+    var table = [];
+
+    for (var i = 0; i < input_sequence.length; i += 1) {
+
+        table.push(input_sequence[i]);
+        table.push("unused");
+        table.push("1.0");
+        table.push(i);
+        table.push(5);
+
+    }
+
+    for (var i = 0; i < choices.length; i += 1) {
+
+        table.push(choices[i]);
+        table.push("unused");
+        table.push("1.0");
+        table.push(input_sequence.length);
+        table.push(i);
+
+    }
+    var camera, scene, renderer;
+    var controls;
+    var objects = [];
+    var bars = [];
+    var targets = {table: [], sphere: [], helix: [], grid: []};
+
+    var audio;
+
+    function reload_audio() {
+
+        audio = new Audio("{{ url_for('static', filename='test.wav') }}?cb=" + new Date().getTime());
+
+    }
+
+    init();
+
+    animate();
+
+    function init() {
+
+        camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 10000);
+        camera.position.z = 3000;
+        scene = new THREE.Scene();
+
+        // table
+        for (var i = 0; i < table.length; i += 5) {
+
+            if (table[i] === "X") {
+                continue;
+            }
+
+            // Create element (the canvas for one chord)
+            var element = document.createElement('div');
+            element.className = 'element';
+
+            if (i > 0) {
+
+                // A normal chord element
+
+                // Create link to apply out animation
+                var a_link = document.createElement('div');
+                a_link.id = input_sequence.join(" ") + " " + table[i];
+                a_link.onclick = function () {
+                    out_transition(1000, this.id)
+                };
+                element.appendChild(a_link);
+
+                // Add name of the chord
+                var symbol = document.createElement('div');
+                symbol.className = 'symbol';
+                symbol.textContent = table[i];
+                a_link.appendChild(symbol);
+
+                // Add scheme of the chord
+                // <ins class="scales_chords_api" chord="D#m(maj9)"></ins>
+                // var ins = document.createElement('ins');
+                // ins.textContent = table[i];
+                // ins.className = "scales_chords_api";
+                // ins.setAttribute("chord", table[i]);
+                // ins.setAttribute("instrument", "guitar");
+                // ins.setAttribute("output", "sound");
+                // ins.style.cssText = "border: 0px;";
+                // element.appendChild(ins);
+
+            } else {
+
+                // Play and stop buttons
+
+                if (input_sequence.length > 1) {
+                    // First element is the Play button
+                    var play_button = document.createElement('img');
+                    play_button.className = 'element';
+                    play_button.src = "{{ url_for('static', filename='play_button.png') }}";
+                    play_button.style.cssText = "height:60px; width:60px;";
+
+                    play_button.onclick = function () {
+                        reload_audio();
+                        audio.play();
+                    };
+                    element.appendChild(play_button);
+
+                    var stop_button = document.createElement('img');
+                    stop_button.className = 'element';
+                    stop_button.src = "{{ url_for('static', filename='stop_button.png') }}";
+                    stop_button.style.cssText = "height:60px; width:60px;";
+
+                    stop_button.onclick = function () {
+                        audio.pause();
+                        audio.currentTime = 0;
+                    };
+                    element.appendChild(stop_button);
+                }
+
+            }
+            // var number = document.createElement('div');
+            // number.className = 'number';
+            // number.textContent = (i / 5) + 1;
+            // a_link.appendChild(number);
+
+            // var details = document.createElement('div');
+            // details.className = 'details';
+            // details.innerHTML = table[i + 1] + '<br>' + table[i + 2];
+            // a_link.appendChild(details);
+
+            // Create 3d canvas for the element
+            var object = new THREE.CSS3DObject(element);
+
+            // Place it in a random position if it is one of the choices, or
+            // directly in its place it is one of the chords already in the sequence
+            if (table[i + 3] === input_sequence.length) {
+
+                object.position.x = Math.random() * 4000 - 2000;
+                object.position.y = Math.random() * 4000 - 2000;
+                object.position.z = Math.random() * 4000 - 2000;
+
+                // This will be used during the out transition
+                object.name = table[i] + "_out";
+
+                element.style.backgroundColor = 'var(--choices_color)';
+
+            } else {
+
+                object.position.x = (table[i + 3] * 140) - 1330;
+                object.position.y = -(table[i + 4] * 180) + 990;
+                object.position.z = 0.0;
+
+                object.name = table[i];
+
+                element.style.backgroundColor = 'var(--past_chords_color)';
+
+            }
+
+            scene.add(object);
+            objects.push(object);
+
+            // Create a corresponding empty object just to store where the current element
+            // will end up at the end of the animation
+            var object = new THREE.Object3D();
+            object.position.x = (table[i + 3] * 140) - 1330;
+            object.position.y = -(table[i + 4] * 180) + 990;
+            targets.table.push(object);
+
+            // Now create the bar chart
+            if (table[i + 3] === input_sequence.length) {
+
+                var j = (i / 5) - input_sequence.length;
+
+                if (probabilities[j] > 1e-4) {
+
+                    var w = parseFloat(probabilities[j]) * 300;
+
+                    var barchart_div = document.createElement('div');
+                    barchart_div.className = 'probbar';
+                    barchart_div.style.cssText = "width:" + String(w) + 'px;';
+
+                    var barchart = new THREE.CSS3DObject(barchart_div);
+
+                    barchart.position.x = object.position.x + 140 + w / 2.0;
+                    barchart.position.y = object.position.y;
+                    barchart.position.z = 10000;
+
+                    scene.add(barchart);
+
+                    bars.push(barchart);
+                }
+
+            }
+
+        }
+
+        // grid
+        for (var i = 0; i < objects.length; i++) {
+            var object = new THREE.Object3D();
+            object.position.x = ((i % 5) * 400) - 800;
+            object.position.y = (-(Math.floor(i / 5) % 5) * 400) + 800;
+            object.position.z = (Math.floor(i / 25)) * 1000 - 2000;
+            targets.grid.push(object);
+        }
+        //
+        renderer = new THREE.CSS3DRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.domElement.style.position = 'absolute';
+        renderer.domElement.style.top = 0;
+        document.getElementById('container').appendChild(renderer.domElement);
+        //
+        // controls = new THREE.TrackballControls(camera, renderer.domElement);
+        // controls.rotateSpeed = 0.5;
+        // controls.minDistance = 500;
+        // controls.maxDistance = 6000;
+        // controls.addEventListener('change', render);
+
+        // Default
+        transform(targets.table, 1000);
+        //
+        window.addEventListener('resize', onWindowResize, false);
+    }
+
+    function point_camera_at_object(obj) {
+
+        console.log(camera.position);
+
+        // var ignore1 = new THREE.Vector3();
+        // var ignore2 = new THREE.Vector3();
+        // var front_vector = new THREE.Vector3();
+        //
+        // // get the direction the camera is pointing at
+        // camera.matrix.extractBasis ( ignore1, ignore2, front_vector );
+        //
+        // // put the camera at a negative distance from the object
+        // camera.position.copy(obj.position);
+        // camera.position.addScaledVector(front_vector, -1000);
+
+        camera.lookAt(obj.position);
+
+
+        console.log(camera.position);
+
+    }
+
+    function draw_score_bar(score) {
+
+        var bar_width;
+
+        bar_width = (parseFloat(score) * 10).toString();
+
+        var score_div = document.createElement("div");
+        score_div.className = "score";
+
+        var heading_div = document.createElement("div");
+        heading_div.className = "heading";
+        heading_div.innerHTML += "Originality:";
+        score_div.appendChild(heading_div);
+
+        if (isNaN(bar_width)) {
+
+            // Write the message and exit
+            var msg_div = document.createElement("div");
+            msg_div.className = "heading";
+            msg_div.innerHTML += score;
+            score_div.appendChild(msg_div);
+            document.body.appendChild(score_div);
+            return;
+
+        }
+
+        var message = score + " / 10";
+
+        var bar_div = document.createElement("div");
+
+        bar_div.className = "bar";
+
+        bar_div.style.cssText = "width:" + bar_width + 'px;';
+        score_div.appendChild(bar_div);
+
+        var label_div = document.createElement("div");
+        label_div.className = "heading";
+        label_div.innerHTML += message;
+        score_div.appendChild(label_div);
+
+        document.body.appendChild(score_div);
+    }
+
+    function out_transition(duration, seq_part) {
+
+        var sp = seq_part.split(" ");
+        var selected_chord = sp[sp.length - 1];
+
+        // Play sound
+
+
+        var sign = +1;
+
+        for (var i = 0; i < objects.length; i++) {
+
+            var object = objects[i];
+
+            if (object.name.endsWith("_out")) {
+
+                // Move selected chord to the main row, move out of the screen everything else
+
+                if (object.name.split("_out")[0] === selected_chord) {
+
+                    new TWEEN.Tween(object.position)
+                        .to({
+                                x: ((sp.length - 1) * 140) - 1330,
+                                y: -(5 * 180) + 990,
+                                z: 0.0
+                            },
+                            duration)
+                        .easing(TWEEN.Easing.Exponential.InOut)
+                        .start();
+
+                } else {
+
+                    new TWEEN.Tween(object.position)
+                        .to({
+                                x: (0.5 + Math.random()) * 4000,
+                                y: (0.5 + Math.random()) * 8000 * sign,
+                                z: 1000.0
+                            },
+                            duration)
+                        .easing(TWEEN.Easing.Exponential.InOut)
+                        .start();
+
+                    sign = sign * (-1);
+                }
+
+
+            }
+
+        }
+
+        // Move away the bar charts
+        for (var i = 0; i < bars.length; i++) {
+
+            var bar = bars[i];
+
+            new TWEEN.Tween(bar.position)
+                .to({
+                        x: (0.5 + Math.random()) * 4000,
+                        y: (0.5 + Math.random()) * 8000 * sign,
+                        z: 10000.0
+                    },
+                    duration)
+                .easing(TWEEN.Easing.Exponential.InOut)
+                .start();
+
+            sign = sign * (-1);
+
+        }
+
+
+        // This is to call periodically the renderer to actually show the animation as it happens
+        new TWEEN.Tween(this)
+            .to({}, duration)
+            .onUpdate(render)
+            .start()
+            .onComplete(function () {
+                window.location.assign(encodeURIComponent(seq_part))
+            });
+
+    }
+
+    function transform(targets, duration) {
+        TWEEN.removeAll();
+        for (var i = 0; i < objects.length; i++) {
+            var object = objects[i];
+            var target = targets[i];
+
+            new TWEEN.Tween(object.position)
+                .to({
+                    x: target.position.x,
+                    y: target.position.y,
+                    z: target.position.z
+                }, Math.random() * duration + duration)
+                .easing(TWEEN.Easing.Exponential.InOut)
+                .start();
+            new TWEEN.Tween(object.rotation)
+                .to({
+                    x: target.rotation.x,
+                    y: target.rotation.y,
+                    z: target.rotation.z
+                }, Math.random() * duration + duration)
+                .easing(TWEEN.Easing.Exponential.InOut)
+                .start();
+
+        }
+
+        // Move in place the bar charts
+        for (var i = 0; i < bars.length; i++) {
+
+            var bar = bars[i];
+
+            new TWEEN.Tween(bar.position)
+                .to({
+                        x: bar.position.x,
+                        y: bar.position.y,
+                        z: 0
+                    },
+                    duration)
+                .easing(TWEEN.Easing.Exponential.InOut)
+                .start();
+
+        }
+
+        // This is to call periodically the renderer to actually show the animation as it happens
+        new TWEEN.Tween(this)
+            .to({}, duration * 2)
+            .onUpdate(render)
+            .start();
+
+    }
+
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        render();
+    }
+
+    function animate() {
+
+        requestAnimationFrame(animate);
+
+        TWEEN.update();
+        //controls.update();
+    }
+
+    function render() {
+
+        renderer.render(scene, camera);
+    }
+</script>
+</body>
+</html>

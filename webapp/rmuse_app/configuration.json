@@ -1,0 +1,9 @@
+{
+
+  "hit_maker_model" : "static/models/best_model_drop03_300.h5",
+  "hit_maker_vocabulary": "static/models/best_model_drop03_300_vocabulary.json",
+
+  "connoisseur_model": "static/models/rock_model_prod.hdf",
+  "connoisseur_vocabulary": "static/models/rock_vocabulary_prod.json",
+  "connoisseur_binomials": "static/models/rock_scoring.hdf"
+}
