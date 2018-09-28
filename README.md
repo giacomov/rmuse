@@ -1,3 +1,3 @@
-# Your musical muse
+# Find your inspiration
 
-blah blah
+(cool punch line here)
