@@ -142,7 +142,9 @@ def hitmaker(input_sequence=None):
     return render_template("view.html", input_sequence=input_sequence,
                            choices=choices,
                            probabilities=probabilities,
-                           score=score)
+                           score=score,
+                           icon_file=url_for('static', filename='hit_maker.png'),
+                           robot_name="The Hit Maker")
 
 
 @app.route('/connoisseur/')
@@ -169,7 +171,8 @@ def rock(input_sequence=None):
                            choices=choices,
                            probabilities=probabilities,
                            score=score,
-                           icon_file=url_for('static', filename='connoisseur.png'))
+                           icon_file=url_for('static', filename='connoisseur.png'),
+                           robot_name="The Connoisseur")
 
 @app.route('/')
 def main():
