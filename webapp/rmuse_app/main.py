@@ -31,7 +31,8 @@ seed_sequences = {'Em': "Em Am D7 G Em C Am Em",
                   "A": "A Bm E A F#m Bm E A",
                   "D": "D Bm E A D7 G A D"}
 
-seed_sequences_rock = {'C': "C Em Am F A# C G C"}
+seed_sequences_rock = {'C': "C Em Am F A# C G C",
+                       'Am': "Am Dm E Am C G Em Am"}
 
 ai = ChordsAI(configuration['hit_maker_model'],
               configuration['hit_maker_vocabulary'])
