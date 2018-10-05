@@ -8,7 +8,7 @@ from IPython.display import Audio, display
 
 import fluidsynth
 from audiolazy import lazy_midi
-import yaml
+import json
 from .package_data import get_path_of_data_file
 
 
@@ -17,9 +17,9 @@ class ChordSequencePlayer(object):
     def __init__(self, rate=44100):
 
         # Read dictionary containing chord components
-        with open(get_path_of_data_file("chords_components.yml")) as f:
+        with open(get_path_of_data_file("chords_components.json")) as f:
 
-            self._components = yaml.load(f)
+            self._components = json.load(f)
 
         self._rate = rate
 

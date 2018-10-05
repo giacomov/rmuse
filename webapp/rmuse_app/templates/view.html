@@ -66,6 +66,14 @@
             z-index: 1;
         }
 
+        #download {
+            position: absolute;
+            top: 5%;
+            left: 90%;
+            z-index: 1;
+
+        }
+
         .score {
             position: absolute;
             top: 41%;
@@ -254,13 +262,15 @@
 
     }
 
+    var pos_diff = 11 - choices.length;
+
     for (var i = 0; i < choices.length; i += 1) {
 
         table.push(choices[i]);
         table.push("unused");
         table.push("1.0");
         table.push(input_sequence.length);
-        table.push(i);
+        table.push(i + pos_diff / 2);
 
     }
     var camera, scene, renderer;
@@ -273,7 +283,7 @@
 
     function reload_audio() {
 
-        audio = new Audio("{{ url_for('static', filename='test.wav') }}?cb=" + new Date().getTime());
+        audio = new Audio("{{ audio_file }}?cb=" + new Date().getTime());
 
     }
 
@@ -301,13 +311,40 @@
             if (i > 0) {
 
                 // A normal chord element
-
-                // Create link to apply out animation
                 var a_link = document.createElement('div');
-                a_link.id = input_sequence.join(" ") + " " + table[i];
-                a_link.onclick = function () {
-                    out_transition(1000, this.id)
-                };
+
+                if (table[i + 3] === input_sequence.length) {
+                    // This is one of the choices
+                    // Create link to apply out animation
+
+                    a_link.id = input_sequence.join(" ") + " " + table[i];
+
+                    a_link.onclick = function () {
+                        out_transition(1000, this.id, true);
+                    }
+
+                } else {
+
+                    // This is one of the previous chords. If click
+                    // here, move back in the sequence
+
+                    a_link.id = input_sequence.slice(0, i/5).join(" ") + " " + table[i];
+
+                    a_link.onclick = function() {
+
+                        // Ask confirmation
+                        var answ = confirm("Are you sure you want to go back to this point?");
+
+                        if (answ) {
+
+                            out_transition(1000, this.id, false);
+
+                        }
+
+                    }
+
+                }
+
                 element.appendChild(a_link);
 
                 // Add name of the chord
@@ -335,7 +372,7 @@
                     var play_button = document.createElement('img');
                     play_button.className = 'element';
                     play_button.src = "{{ url_for('static', filename='play_button.png') }}";
-                    play_button.style.cssText = "height:60px; width:60px;";
+                    play_button.style.cssText = "height:40px; width:40px;";
 
                     play_button.onclick = function () {
                         reload_audio();
@@ -346,25 +383,17 @@
                     var stop_button = document.createElement('img');
                     stop_button.className = 'element';
                     stop_button.src = "{{ url_for('static', filename='stop_button.png') }}";
-                    stop_button.style.cssText = "height:60px; width:60px;";
+                    stop_button.style.cssText = "height:40px; width:40px;";
 
                     stop_button.onclick = function () {
                         audio.pause();
                         audio.currentTime = 0;
                     };
                     element.appendChild(stop_button);
+
                 }
 
             }
-            // var number = document.createElement('div');
-            // number.className = 'number';
-            // number.textContent = (i / 5) + 1;
-            // a_link.appendChild(number);
-
-            // var details = document.createElement('div');
-            // details.className = 'details';
-            // details.innerHTML = table[i + 1] + '<br>' + table[i + 2];
-            // a_link.appendChild(details);
 
             // Create 3d canvas for the element
             var object = new THREE.CSS3DObject(element);
@@ -432,6 +461,30 @@
 
         }
 
+        // Put the download button if there is something to download
+
+        if (input_sequence.length > 1)
+        {
+            var download_div = document.createElement("div");
+            download_div.id = "download";
+
+            var download_wav = document.createElement("a");
+            download_wav.href = "{{ audio_file }}";
+            download_wav.setAttribute("download", "rmuse.wav");
+            var img_wav = document.createElement("img");
+            img_wav.src = "{{ url_for('static', filename='download_wav.png') }}";
+
+            var img_txt = document.createElement("img");
+            img_txt.src = "{{ url_for('static', filename='download_txt.png') }}";
+            img_txt.onclick = function() { download_text("rmuse.txt", input_sequence.join(" ")); };
+
+            download_wav.appendChild(img_wav);
+            download_div.appendChild(download_wav);
+            download_div.appendChild(img_txt);
+            document.body.appendChild(download_div);
+
+        }
+
         // grid
         for (var i = 0; i < objects.length; i++) {
             var object = new THREE.Object3D();
@@ -459,10 +512,18 @@
         window.addEventListener('resize', onWindowResize, false);
     }
 
-    function place_control_bar() {
+    function download_text(filename, text) {
 
+        var element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+        element.setAttribute('download', filename);
 
+        element.style.display = 'none';
+        document.body.appendChild(element);
 
+        element.click();
+
+        document.body.removeChild(element);
     }
 
     function draw_score_bar(score) {
@@ -508,7 +569,7 @@
         document.body.appendChild(score_div);
     }
 
-    function out_transition(duration, seq_part) {
+    function out_transition(duration, seq_part, slide_down) {
 
         var sp = seq_part.split(" ");
         var selected_chord = sp[sp.length - 1];
@@ -526,7 +587,7 @@
 
                 // Move selected chord to the main row, move out of the screen everything else
 
-                if (object.name.split("_out")[0] === selected_chord) {
+                if (object.name.split("_out")[0] === selected_chord && slide_down) {
 
                     new TWEEN.Tween(object.position)
                         .to({

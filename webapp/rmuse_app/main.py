@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 import numpy as np
 
@@ -11,9 +13,10 @@ from rmuse.chords_ai.player import ChordSequencePlayer
 
 np.random.seed(10)
 
-from flask import Flask
+from flask import Flask, request, jsonify
 from flask import render_template
 from flask import url_for
+import hashlib
 
 import tensorflow as tf
 import json
@@ -23,7 +26,12 @@ with open("configuration.json") as f:
 
     configuration = json.load(f)
 
+# Set up Flask app
 app = Flask(__name__)
+
+
+# Init Tensorflow stuff (we avoid reloading every time, because
+# we need real-time performance)
 
 seed_sequences = {'Em': "Em Am D7 G Em C Am Em",
                   'C': "C G Am F C Dm G C",
@@ -32,19 +40,50 @@ seed_sequences = {'Em': "Em Am D7 G Em C Am Em",
                   "D": "D Bm E A D7 G A D"}
 
 seed_sequences_rock = {'C': "C Em Am F A# C G C",
-                       'Am': "Am Dm E Am C G Em Am"}
+                       'Am': "Am Dm Am Dm Am E Am"}
 
-ai = ChordsAI(configuration['hit_maker_model'],
-              configuration['hit_maker_vocabulary'])
+hit_maker = ChordsAI(configuration['hit_maker_model'],
+                     configuration['hit_maker_vocabulary'])
 
-ai.model_summary()
+hit_maker.model_summary()
 
-ai_rock = ChordsAI(configuration['connoisseur_model'], configuration['connoisseur_vocabulary'],
-                   sort_vocabulary=False)
+connoisseur = ChordsAI(configuration['connoisseur_model'], configuration['connoisseur_vocabulary'],
+                       sort_vocabulary=False)
 
-ai_rock.model_summary()
+connoisseur.model_summary()
 
+# We need this to get around the multitask nature of flask
 graph = tf.get_default_graph()
+
+
+# This function returns a (more or less) unique id to identify a user
+# We need this so multiple users can use the rmuse at the same time
+def _get_unique_id():
+
+    if request.environ.get('HTTP_X_FORWARDED_FOR') is None:
+
+        # Not in nginx
+
+        ip_address = request.environ['REMOTE_ADDR']
+
+    else:
+
+        # In nginx
+
+        ip_address = jsonify({'ip': request.environ['HTTP_X_FORWARDED_FOR']}), 200
+
+    print(ip_address)
+
+    # This is something like '
+    # Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.101 Safari/537.36'
+    user_agent = request.headers.get('User-Agent')
+
+    hash_material = "%s%s" % (user_agent, ip_address)
+
+    print("Got a visit from: %s" % ip_address)
+    print("User agent: %s" % user_agent)
+
+    return hashlib.md5(hash_material.encode('utf-8')).hexdigest()
 
 
 def _get_prediction(input_sequence, ai_, seed_):
@@ -56,6 +95,8 @@ def _get_prediction(input_sequence, ai_, seed_):
         input_sequence = ''
         choices = 'X X X X X C Am X X X X'
         probabilities = " ".join(["0"] * 11)
+
+        audio_filename = None
 
     else:
 
@@ -78,8 +119,9 @@ def _get_prediction(input_sequence, ai_, seed_):
             gen_seq = " ".join(gen_seq)
 
         # Generate audio for this sequence
+        audio_filename = 'wave/%s.wav' % _get_unique_id()
         pl = ChordSequencePlayer()
-        pl.to_wav(input_sequence, 'static/test.wav')
+        pl.to_wav(input_sequence, os.path.join("static", audio_filename))
 
         with graph.as_default():
 
@@ -92,7 +134,7 @@ def _get_prediction(input_sequence, ai_, seed_):
 
         probs = pd.Series({k: v for k, v in zip(*r)})
 
-        first_ten = probs.sort_values(ascending=False)[:11]
+        first_ten = probs.sort_values(ascending=False)[:7]
 
         first_half = pd.Series()
         second_half = pd.Series()
@@ -117,7 +159,7 @@ def _get_prediction(input_sequence, ai_, seed_):
         choices = " ".join(ss.index.values)
         probabilities = " ".join(list(map(lambda x:"%.3f" % x, ss.values)))
 
-    return input_sequence, choices, probabilities
+    return input_sequence, choices, probabilities, audio_filename
 
 
 @app.route('/hitmaker/')
@@ -128,7 +170,7 @@ def hitmaker(input_sequence=None):
 
     global graph
 
-    input_sequence, choices, probabilities = _get_prediction(input_sequence, ai, seed_sequences)
+    input_sequence, choices, probabilities, audio_file = _get_prediction(input_sequence, hit_maker, seed_sequences)
 
     if len(input_sequence.split(" ")) <= 3:
 
@@ -139,24 +181,33 @@ def hitmaker(input_sequence=None):
 
         os = OriginalityScore(configuration['connoisseur_binomials'])
         score = os.originality_ranking(input_sequence.strip())
+
+    if audio_file is not None:
+
+        audio = url_for('static', filename=audio_file)
+
+    else:
+
+        audio = ""
 
     return render_template("view.html", input_sequence=input_sequence,
                            choices=choices,
                            probabilities=probabilities,
                            score=score,
                            icon_file=url_for('static', filename='hit_maker.png'),
-                           robot_name="The Hit Maker")
+                           robot_name="The Hit Maker",
+                           audio_file=audio)
 
 
 @app.route('/connoisseur/')
 @app.route('/connoisseur/<input_sequence>')
-def rock(input_sequence=None):
+def theconnoisseur(input_sequence=None):
 
     import tensorflow as tf
 
     global graph
 
-    input_sequence, choices, probabilities = _get_prediction(input_sequence, ai_rock, seed_sequences_rock)
+    input_sequence, choices, probabilities, audio_file = _get_prediction(input_sequence, connoisseur, seed_sequences_rock)
 
     if len(input_sequence.split(" ")) <= 3:
 
@@ -168,12 +219,21 @@ def rock(input_sequence=None):
         os = OriginalityScore(configuration['connoisseur_binomials'])
         score = os.originality_ranking(input_sequence.strip())
 
+    if audio_file is not None:
+
+        audio = url_for('static', filename=audio_file)
+
+    else:
+
+        audio = ""
+
     return render_template("view.html", input_sequence=input_sequence,
                            choices=choices,
                            probabilities=probabilities,
                            score=score,
                            icon_file=url_for('static', filename='connoisseur.png'),
-                           robot_name="The Connoisseur")
+                           robot_name="The Connoisseur",
+                           audio_file=audio)
 
 @app.route('/')
 def main():
