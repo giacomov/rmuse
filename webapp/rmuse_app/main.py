@@ -70,7 +70,7 @@ def _get_unique_id():
 
         # In nginx
 
-        ip_address = jsonify({'ip': request.environ['HTTP_X_FORWARDED_FOR']}), 200
+        ip_address = request.environ['HTTP_X_FORWARDED_FOR']
 
     print(ip_address)
 
