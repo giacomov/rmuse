@@ -32,18 +32,16 @@ with open("configuration.json") as f:
 GA_TRACKING_ID = configuration['GA_TRACKING_ID']
 
 
-def track_event(category, action, label=None, value=0):
+# https://developers.google.com/analytics/devguides/collection/protocol/v1/reference
+def track_event(page):
     data = {
         'v': '1',  # API Version.
         'tid': GA_TRACKING_ID,  # Tracking ID / Property ID.
         # Anonymous Client Identifier. Ideally, this should be a UUID that
         # is associated with particular user, device, or browser instance.
-        'cid': '555',
-        't': 'event',  # Event hit type.
-        'ec': category,  # Event category.
-        'ea': action,  # Event action.
-        'el': label,  # Event label.
-        'ev': value,  # Event value, must be an integer
+        'cid': _get_unique_id(),
+        't': 'pageview',  # Event hit type.
+        'dp': page,  # Page visited
     }
 
     print("Sending to GOOGLE:")
@@ -198,9 +196,7 @@ def _get_prediction(input_sequence, ai_, seed_):
 @app.route('/hitmaker/<input_sequence>')
 def hitmaker(input_sequence=None):
 
-    track_event(
-        category='RobotWorking',
-        action='Hit Maker generated 1 chord')
+    track_event('/hitmaker')
 
     import tensorflow as tf
 
@@ -239,9 +235,7 @@ def hitmaker(input_sequence=None):
 @app.route('/connoisseur/<input_sequence>')
 def theconnoisseur(input_sequence=None):
 
-    track_event(
-        category='RobotWorking',
-        action='The Connoisseur generated 1 chord')
+    track_event('/connoisseur')
 
     import tensorflow as tf
 
@@ -278,8 +272,6 @@ def theconnoisseur(input_sequence=None):
 @app.route('/')
 def main():
 
-    track_event(
-        category='RobotSelection',
-        action='Landing on main page')
+    track_event('/')
 
     return render_template("initial_selection.html")
