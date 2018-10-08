@@ -5,5 +5,7 @@
 
   "connoisseur_model": "static/models/rock_model_prod.hdf",
   "connoisseur_vocabulary": "static/models/rock_vocabulary_prod.json",
-  "connoisseur_binomials": "static/models/rock_scoring.hdf"
+  "connoisseur_binomials": "static/models/rock_scoring.hdf",
+
+  "GA_TRACKING_ID": ""
 }
