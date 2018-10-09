@@ -6,6 +6,8 @@
 
     <link href="https://fonts.googleapis.com/css?family=Karla" rel="stylesheet">
 
+    <script src="https://cdn.jsdelivr.net/npm/typed.js@2.0.9"></script>
+
     <style>
 
         :root {
@@ -70,6 +72,13 @@
 </head>
 
 <body>
+
+<div id="typed-strings">
+    <p>Please pick your <em>Robot Muse</em></p>
+    <p>Different robots, different suggestions!</p>
+</div>
+<!--<span id="typed"></span>-->
+
 <div id="logo">
 
     <img border="0" alt="logo" style="width: 300px;" src="{{ url_for('static', filename='logo.png') }}"/>
@@ -92,8 +101,18 @@
             <div>The Connoisseur</div>
             <div style="margin-top: 30px;">(advanced)</div>
         </div>
-        <div style="margin-top: 50px;">Please pick your Robot Muse</div>
+        <!--<div style="margin-top: 50px;" id="typed-strings">Please pick your Robot Muse</div>-->
+        <div style="margin-top: 50px;"><span id="typed"></span></div>
 </div>
+
+    <script>
+        var typed = new Typed('#typed', {
+            stringsElement: '#typed-strings',
+            typeSpeed: 100,
+            loop: true,
+            backDelay: 4000
+        });
+    </script>
 
 </body>
 </html>

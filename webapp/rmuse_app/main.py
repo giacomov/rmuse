@@ -47,13 +47,19 @@ def track_event(page):
     print("Sending to GOOGLE:")
     print(data)
 
-    response = requests.post(
-        'http://www.google-analytics.com/collect', data=data)
+    try:
 
-    # If the request fails, this will raise a RequestException. Depending
-    # on your application's needs, this may be a non-error and can be caught
-    # by the caller.
-    response.raise_for_status()
+        response = requests.post(
+            'http://www.google-analytics.com/collect', data=data)
+
+        # If the request fails, this will raise a RequestException. Depending
+        # on your application's needs, this may be a non-error and can be caught
+        # by the caller.
+        # response.raise_for_status()
+
+    except:
+
+        pass
 
 
 # Set up Flask app
