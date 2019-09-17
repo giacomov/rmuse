@@ -1,0 +1,17 @@
+version: '3'
+services:
+  web:
+    build: .
+    environment:
+      - WEB_CONCURRENCY=4
+    ports:
+     - "80:80"
+  dev:
+    build: .
+    environment:
+      - PORT=80
+      - LOG_LEVEL=debug
+      - FLASK_ENV=development
+      - WEB_CONCURRENCY=4
+    ports:
+      - "80:80"

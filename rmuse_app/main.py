@@ -9,6 +9,7 @@ import rmuse
 
 from rmuse.originality.originality import OriginalityScore
 from rmuse.chords_ai import ChordsAI
+from rmuse.chords_ai.custom_metric import sparse_top_k_categorical_accuracy_3
 from rmuse.chords_ai.player import ChordSequencePlayer
 
 np.random.seed(10)
@@ -21,6 +22,7 @@ import hashlib
 import tensorflow as tf
 import json
 import requests
+
 
 # Read configuration
 with open("configuration.json") as f:

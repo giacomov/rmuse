@@ -29,7 +29,15 @@ setup(
     ],
     keywords='music composition chords rnn lstm',  # Optional
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),  # Required
-    install_requires=['numpy', 'pandas', 'keras'],  # Optional
+    install_requires=['numpy',
+                      'pandas',
+                      'keras',
+                      'tensorflow < 2',
+                      'ipython',
+                      'pyfluidsynth > 1.0',
+                      'audiolazy',
+                      'requests',
+                      'tables'],
     extras_require={  # Optional
         'dev': ['check-manifest'],
         'test': ['coverage', 'pytest'],
