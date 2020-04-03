@@ -10,3 +10,4 @@ ADD . /repo
 RUN cd /repo/ ; pip install --no-cache-dir -e . && rm -rf ~/.cache
 
 ENV MODULE_NAME="main"
+ENV LOG_LEVEL="debug"
